@@ -1,0 +1,47 @@
+---
+title: "Stat 100 p=Project"
+author: "Julia Van Hoozer"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+## Simulated Data
+
+```{r}
+#| output: FALSE
+#|
+library( tidyverse )
+library( janitor )
+library(RColorBrewer)
+library(lubridate)
+library(tinytable)
+
+covid<- read_csv ("CovidProject.csv") 
+```
+
+```{r}
+simulated_data <-
+  tibble(
+    "Number of Jobs Lost" = sample(1:100000, size = 100000, replace = TRUE),
+    "Year" = sample(c("2019", "2020", "2021", "2022", "2023"), size = 100000, replace = TRUE), 
+    "Month" = sample(
+      x = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"),
+      size = 100000,
+      replace = TRUE
+    )
+  )
+
+sample_n(simulated_data, 10)
+```
+
+```{r}
+#olnames(covid)
+#CovidProject <- covid |>
+  #group_by(MonthYear) |>
+  #summarize( TOTAL = sum( NumUnemp, na.rm=TRUE )) |>
+  #mutate( MonthYear = fct_reorder( MonthYear, TOTAL ))
+
+#make table
+#tt(CovidProject)
+```
