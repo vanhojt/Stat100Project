@@ -45,3 +45,12 @@ sample_n(simulated_data, 10)
 #make table
 #tt(CovidProject)
 ```
+
+```{r}
+ggplot( Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + labs( title = "loss of work due to illness by age group")
+```
+
+```{r}
+ggplot(Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter(Group == "Race/Hispanic orgin")) + geom_col(aes(x=Subgroup, y= `Sample Size`, fill=factor(Round)), position = "dodge") + labs( title= "loss of work due to illness by race")
+```
+
