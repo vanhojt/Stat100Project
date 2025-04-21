@@ -1,0 +1,46 @@
+---
+title: "State Unemployment Impact Map"
+format: html
+editor: visual
+---
+
+```{r}
+#| include: FALSE
+library(tidyverse)
+library(sf)
+library(tmap)
+library(geodata)
+
+unemployment <- read.csv("State_COVID19_Impact.csv")
+
+tmap_options(basemap.server = "OpenStreetMap")
+tmap_mode("view")
+```
+
+
+```{r}
+
+unemployment <- unemployment 
+
+state_unemployment <- unemployment |> 
+  group_by(State) |> 
+  summarize(Unemployed_2020 = sum(Unemployed_2020)) 
+
+us <- gadm("USA", level = 1, path = tempdir())
+us <- st_as_sf(us)
+
+us_data <- us |> 
+  left_join(state_unemployment, by = c("NAME_1" = "State"))
+```
+
+
+```{r}
+
+us<- gadm( "USA", level = 1, path = getwd())
+
+us <- st_as_sf(us) |>
+  filter (NAME_1= "Alaska", NAME_1= "Hawaii")
+
+tm_shape(us) +
+  tm_polygons(id = "NAME_1")
+```
