@@ -2,6 +2,8 @@
 title: "State Unemployment Impact Map"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -11,7 +13,8 @@ library(sf)
 library(tmap)
 library(geodata)
 
-unemployment <- read.csv("State_COVID19_Impact.csv")
+unemployment <- read_csv("State_COVID19_Impact.csv", show_col_types = FALSE) |>
+  mutate( Unemployed_2020 = abs(Unemployed_2020))
 
 tmap_options(basemap.server = "OpenStreetMap")
 tmap_mode("view")
@@ -20,27 +23,19 @@ tmap_mode("view")
 
 ```{r}
 
-unemployment <- unemployment 
-
-state_unemployment <- unemployment |> 
-  group_by(State) |> 
-  summarize(Unemployed_2020 = sum(Unemployed_2020)) 
-
-us <- gadm("USA", level = 1, path = tempdir())
+us <- gadm("USA", level = 1, path = getwd())
 us <- st_as_sf(us)
 
-us_data <- us |> 
-  left_join(state_unemployment, by = c("NAME_1" = "State"))
+us <- us |> 
+  mutate( NAME_1 = toupper( NAME_1 ) ) |> 
+  left_join( unemployment, by = c("NAME_1" = "State")) |>
+  filter (NAME_1 != "ALASKA", NAME_1 != "HAWAII")
+
 ```
 
 
 ```{r}
 
-us<- gadm( "USA", level = 1, path = getwd())
-
-us <- st_as_sf(us) |>
-  filter (NAME_1= "Alaska", NAME_1= "Hawaii")
-
 tm_shape(us) +
-  tm_polygons(id = "NAME_1")
+  tm_polygons(id = "NAME_1", fill = "Unemployed_2020", style="jenks")
 ```
