@@ -47,10 +47,65 @@ sample_n(simulated_data, 10)
 ```
 
 ```{r}
+```
+
+
+```{r}
 ggplot( Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + labs( title = "loss of work due to illness by age group")
 ```
 
 ```{r}
 ggplot(Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter(Group == "Race/Hispanic orgin")) + geom_col(aes(x=Subgroup, y= `Sample Size`, fill=factor(Round)), position = "dodge") + labs( title= "loss of work due to illness by race")
+```
+
+```{r}
+data <- read.csv("by state.csv")
+```
+
+```{r}
+install.packages(c("ggplot2", "dplyr", "maps", "mapdata"))
+library(ggplot2)
+library(dplyr)
+library(maps)
+library(mapdata)
+```
+
+```{r}
+By_state <- read.csv("by state.csv", skip = 5)
+```
+
+```{r}
+colnames(By_state) <- c("State", "Total", "Job_Loser", "On_Temporary_Layoff", "Job_Leavers", "Reentrants", "New_Entrants")
+```
+
+```{r}
+By_state <- By_state %>%
+  filter(State !=Total)
+By_state$State <- trimws(By_state$State)
+```
+
+```{r}
+maps_data_ready <- By_state %>%
+  select(State, Total) %>%
+           mutate(State= tolower(State)) %>%
+  rename(region=State)
+```
+
+```{r}
+states_map <- map_data("state")
+```
+
+```{r}
+final_map_data <- left_join(states_map,maps_data_ready, by = "region")
+
+```
+
+```{r}
+ggplot(final_map_data, aes(x=long, y=lat, group=group, fill=Total)) +
+  geom_polygon(color="black")+
+  scale_fill_continuous(name= "Total unemployement\n(in thousands)", low="white", high="red") +
+  theme_minimal()+
+  labs(title= "Total unemployement by state (2019") +
+  theme(axis.text= element_blank(), axis.title= element_blank(), panel.grid = element_blank())
 ```
 
