@@ -1,0 +1,26 @@
+---
+title: "Job Loss in Covid 19"
+author: "Julia Van Hoozer and Hannah Burt"
+format: revealjs
+editor: visual
+---
+
+## Introduction
+
+-   Investigate the correlation between job loss and Covid 19 in the United States.
+
+-   Look at multiple factors including: gender, ethnicity, age, region, job type, and income
+
+-   Compare these factors before, after, and during Covid 19 along with job loss.
+
+-   Look specifically in Tennessee at these rates compared to the US.
+
+## Graph
+
+(U.S. Bureau of Labor Statistics)
+
+![](images/clipboard-3248307851.png)
+
+## Graph
+
+![](images/clipboard-949449138.png)
