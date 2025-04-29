@@ -15,12 +15,183 @@ editor: visual
 
 -   Look specifically in Tennessee at these rates compared to the US.
 
-## Graph
+## Line Graph
 
-(U.S. Bureau of Labor Statistics)
+(U.S. Bureau of Labor Statistics)\
 
-![](images/clipboard-3248307851.png)
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(janitor)
+library(RColorBrewer)
+library(lubridate)
+library(ggplot2)
+library(sf)
+library(geodata)
+library(dplyr)
+library(readr)
 
-## Graph
+UNRATE<- read_csv("UNRATE.csv")
+```
 
-![](images/clipboard-949449138.png)
+```{r}
+# Process the date column correctly
+UNRATE <- UNRATE %>%
+  mutate(Date = as.Date(observation_date)) %>%
+  arrange(Date)
+```
+
+```{r}
+# Create a continuous line chart of unemployment rate over time
+ggplot(UNRATE, aes(x = Date, y = UNRATE)) + 
+  geom_line(linewidth = 1, color = "#2C7FB8") +
+  theme_minimal() +
+  labs(title = "Unemployment Rate Trend Over Time",
+       x = "Date", 
+       y = "Unemployment Rate (%)") +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+## Bar Chart
+
+```{r}
+cdc_data <- read_csv("https://data.cdc.gov/api/views/qgkx-mswu/rows.csv?accessType=DOWNLOAD")
+
+ggplot( Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + labs( title = "loss of work due to illness by age group")
+```
+
+```{r}
+
+```
+
+## Map
+
+```{r}
+#| include: FALSE
+library(tidyverse)
+library(sf)
+library(tmap)
+library(geodata)
+
+unemployment <- read_csv("State_COVID19_Impact.csv", show_col_types = FALSE) |>
+  mutate( Unemployed_2020 = abs(Unemployed_2020))
+
+tmap_options(basemap.server = "OpenStreetMap")
+tmap_mode("view")
+```
+
+```{r}
+
+us <- gadm("USA", level = 1, path = getwd())
+us <- st_as_sf(us)
+
+us <- us |> 
+  mutate( NAME_1 = toupper( NAME_1 ) ) |> 
+  left_join( unemployment, by = c("NAME_1" = "State")) |>
+  filter (NAME_1 != "ALASKA", NAME_1 != "HAWAII")
+
+```
+
+```{r}
+
+tm_shape(us) +
+  tm_polygons(id = "NAME_1", fill = "Unemployed_2020", style="jenks")
+```
+
+## Map2
+
+```{r}
+#| include: FALSE
+library(tidyverse)
+library(sf)
+library(tmap)
+library(geodata)
+
+unemployment <- read_csv("2015 unemployment - Sheet1.csv", show_col_types = FALSE) |>
+  mutate( Unemployment_Rate = abs(Unemployment_Rate))
+
+tmap_options(basemap.server = "OpenStreetMap")
+tmap_mode("view")
+```
+
+```{r}
+tn <- gadm(country = "USA", level = 2, path = getwd())
+tn <- st_as_sf(tn) 
+tn <- tn |>
+   filter(NAME_1=="Tennessee")
+tm_shape(tn)+
+   tm_polygons()
+tn <- tn |> 
+  left_join(Unemployment_2015, by = c("NAME_2" = "County"))
+```
+
+```{r}
+tm_shape(tn) +
+  tm_polygons(id = "NAME_2", fill = "Unemployment_Rate", style= "jenks")
+```
+
+```{r}
+#| include: FALSE
+library(tidyverse)
+library(sf)
+library(tmap)
+library(geodata)
+
+unemployment <- read_csv("2020 unemplyment data - Sheet1.csv", show_col_types = FALSE) |>
+  mutate( Unemployment_Rate = abs(Unemployment_Rate))
+
+tmap_options(basemap.server = "OpenStreetMap")
+tmap_mode("view")
+```
+
+
+```{r}
+tn2 <- gadm(country = "USA", level = 2, path = getwd())
+tn2 <- st_as_sf(tn2) 
+tn2 <- tn |>
+   filter(NAME_1=="Tennessee")
+tm_shape(tn2)+
+   tm_polygons()
+ 
+ tn2 <- tn2 |> 
+  left_join(Unemplyment_2020, by = c("NAME_2" = "county")) 
+```
+
+```{r}
+tm_shape(tn2) +
+  tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
+```
+```{r}
+layered_map <- tm_shape(tn) +
+  tm_polygons(
+    "Unemployment_Rate", 
+    title = "2015 Unemployment Rate", 
+    style = "jenks", 
+    palette = "Blues", 
+    group = "2015"
+  ) +
+  tm_shape(tn2) +
+  tm_polygons(
+    "Unemployment_Rate", 
+    title = "2020 Unemployment Rate", 
+    style = "jenks", 
+    palette = "Blues", 
+    group = "2020"
+  ) +
+  tm_layout(
+    main.title = "Tennessee Unemployment Rates (2015 vs 2020)",
+    legend.outside = TRUE
+  ) +
+  tm_add_legend(
+    type = "symbols",
+    labels = c("2015", "2020"),
+    col = c("blue", "blue")
+  )
+
+layered_map
+```
+
