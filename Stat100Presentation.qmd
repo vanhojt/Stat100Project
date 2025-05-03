@@ -1,0 +1,107 @@
+---
+title: "Job Loss in Covid 19"
+author: "Julia Van Hoozer and Hannah Burt"
+format: revealjs
+editor: visual
+---
+
+## Introduction
+
+-   Investigate the correlation between job loss and Covid 19 in the United States.
+
+-   Look at multiple factors including: gender, ethnicity, age, region, job type, and income
+
+-   Compare these factors before, after, and during Covid 19 along with job loss.
+
+-   Look specifically in Tennessee at these rates compared to the US.
+
+## Graph
+
+(U.S. Bureau of Labor Statistics)\
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(janitor)
+library(RColorBrewer)
+library(lubridate)
+library(ggplot2)
+library(sf)
+library(geodata)
+library(dplyr)
+library(readr)
+
+UNRATE<- read_csv("UNRATE.csv")
+```
+
+```{r}
+# Process the date column correctly
+UNRATE <- UNRATE %>%
+  mutate(Date = as.Date(observation_date)) %>%
+  arrange(Date)
+```
+
+```{r}
+# Create a continuous line chart of unemployment rate over time
+ggplot(UNRATE, aes(x = Date, y = UNRATE)) + 
+  geom_line(size = 1, color = "#2C7FB8") +
+  theme_minimal() +
+  labs(title = "Unemployment Rate Trend Over Time",
+       x = "Date", 
+       y = "Unemployment Rate (%)") +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+## Graph
+
+```{r}
+cdc_data <- read_csv("https://data.cdc.gov/api/views/qgkx-mswu/rows.csv?accessType=DOWNLOAD")
+
+ggplot( Loss_of_Work_Due_to_Illness_from_COVID_19_20250401 |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + labs( title = "loss of work due to illness by age group")
+```
+
+## Map
+
+```{r}
+---
+title: "State Unemployment Impact Map"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+#| include: FALSE
+library(tidyverse)
+library(sf)
+library(tmap)
+library(geodata)
+
+unemployment <- read_csv("State_COVID19_Impact.csv", show_col_types = FALSE) |>
+  mutate( Unemployed_2020 = abs(Unemployed_2020))
+
+tmap_options(basemap.server = "OpenStreetMap")
+tmap_mode("view")
+```
+
+```{r}
+
+us <- gadm("USA", level = 1, path = getwd())
+us <- st_as_sf(us)
+
+us <- us |> 
+  mutate( NAME_1 = toupper( NAME_1 ) ) |> 
+  left_join( unemployment, by = c("NAME_1" = "State")) |>
+  filter (NAME_1 != "ALASKA", NAME_1 != "HAWAII")
+
+```
+
+```{r}
+
+tm_shape(us) +
+  tm_polygons(id = "NAME_1", fill = "Unemployed_2020", style="jenks")
+```
