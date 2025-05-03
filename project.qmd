@@ -11,15 +11,13 @@ editor_options:
 
 -   Investigate the correlation between job loss and Covid 19 in the United States.
 
--   Look at multiple factors including: gender, ethnicity, age, region, job type, and income
+-   Look at multiple factors including: gender, ethnicity and age. 
 
--   Compare these factors before, after, and during Covid 19 along with job loss.
+-   Compare these factors before and during Covid 19.
 
 -   Look specifically in Tennessee at these rates compared to the US.
 
 ## Line Graph
-
-(U.S. Bureau of Labor Statistics)\
 
 ```{r}
 # Load necessary libraries
@@ -71,7 +69,6 @@ ggplot( cdc_data |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, 
 
 ```
 
-
 ## Map
 
 ```{r}
@@ -92,7 +89,6 @@ tmap_mode("view")
 
 us <- gadm("USA", level = 1, path = getwd())
 us <- st_as_sf(us)
-
 us <- us |> 
   mutate( NAME_1 = toupper( NAME_1 ) ) |> 
   left_join( unemployment, by = c("NAME_1" = "State")) |>
@@ -106,15 +102,14 @@ tm_shape(us) +
   tm_polygons(id = "NAME_1", fill = "Unemployed_2020", style="jenks")
 ```
 
-## Map2
+## 2015 map
 
-```{r}
+```{r, echo=FALSE, fig.width=12, fig.height=8}
 #| include: FALSE
 library(tidyverse)
 library(sf)
 library(tmap)
 library(geodata)
-
 unemployment <- read_csv("2015 unemployment - Sheet1.csv", show_col_types = FALSE) |>
   mutate( Unemployment_Rate = abs(Unemployment_Rate))
 
@@ -127,18 +122,22 @@ tn <- gadm(country = "USA", level = 2, path = getwd())
 tn <- st_as_sf(tn) 
 tn <- tn |>
    filter(NAME_1=="Tennessee")
-tm_shape(tn)+
-   tm_polygons()
+
 tn <- tn |> 
   left_join(unemployment, by = c("NAME_2" = "County"))
-```
 
-```{r}
-tm_shape(tn) +
+tm_shape(tn)+
   tm_polygons(id = "NAME_2", fill = "Unemployment_Rate", style= "jenks")
 ```
 
 ```{r}
+#tm_shape(tn) +
+  #tm_polygons(id = "NAME_2", fill = "Unemployment_Rate", style= "jenks")
+```
+
+## 2020 map
+
+```{r, echo=FALSE, fig.width=12, fig.height=8}
 #| include: FALSE
 library(tidyverse)
 library(sf)
@@ -152,51 +151,22 @@ tmap_options(basemap.server = "OpenStreetMap")
 tmap_mode("view")
 ```
 
-
 ```{r}
 tn2 <- gadm(country = "USA", level = 2, path = getwd())
 tn2 <- st_as_sf(tn2) 
 tn2 <- tn |>
    filter(NAME_1=="Tennessee")
-tm_shape(tn2)+
-   tm_polygons()
  
  tn2 <- tn2 |> 
-  left_join(Unemployment_2020, by = c("NAME_2" = "county")) 
+  left_join(Unemployment_2020, by = c("NAME_2" = "county"))
+ 
+ tm_shape(tn2)+
+   tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
 ```
 
 ```{r}
-tm_shape(tn2) +
-  tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
-```
-
-```{r}
-tm_shape(tn) +
-  tm_polygons(
-    "Unemployment_Rate", 
-    title = "2015 Unemployment Rate", 
-    style = "jenks", 
-    palette = "Blues", 
-    group = "2015"
-  ) +
-  tm_shape(tn2) +
-  tm_polygons(
-    "Unemployment_Rate.y", 
-    title = "2020 Unemployment Rate", 
-    style = "jenks", 
-    palette = "Blues", 
-    group = "2020"
-  ) +
-  tm_layout(
-    main.title = "Tennessee Unemployment Rates (2015 vs 2020)",
-    legend.outside = TRUE
-  ) +
-  tm_add_legend(
-    type = "symbols",
-    labels = c("2015", "2020"),
-    col = c("blue", "blue")
-  )
-
+#tm_shape(tn2) +
+  #tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
 ```
 
 
