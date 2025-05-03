@@ -3,6 +3,7 @@ title: "Job Loss in Covid 19"
 author: "Julia Van Hoozer and Hannah Burt"
 format: revealjs
 editor: visual
+page- layout: full
 editor_options: 
   chunk_output_type: console
 ---
@@ -30,6 +31,7 @@ library(sf)
 library(geodata)
 library(dplyr)
 library(readr)
+
 
 UNRATE<- read_csv("UNRATE.csv")
 ```
@@ -66,7 +68,24 @@ ggplot( cdc_data |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, 
 
 ##Summary Statistics
 ```{r}
+library(tinytable)
 
+Unemployment_by_month <- read_csv("UNRATE.csv")
+before_after <- Unemployment_by_month |>
+mutate( period = case_when( observation_date < as_date("2020-03-01") ~ "before",
+  observation_date < as_date("2021-03-01") ~ "early",
+  observation_date < as_date("2022-03-01") ~ "late",
+  .default = "after" )) |>
+  mutate( period = factor( period, levels = c("before","early","late","after") ) )
+
+before_after |> 
+  group_by( period ) |>
+  summarize( minimum = quantile( UNRATE, probs = 0 ),
+  Q1= quantile(UNRATE, probs = 0.25),
+  median = quantile( UNRATE, probs = 0.5 ),
+  Q3 = quantile (UNRATE, probs = 0.75), 
+  maximum = quantile( UNRATE, probs = 1 )) |>
+tt()
 ```
 
 ## Map
@@ -104,7 +123,7 @@ tm_shape(us) +
 
 ## 2015 map
 
-```{r, echo=FALSE, fig.width=12, fig.height=8}
+```{r}
 #| include: FALSE
 library(tidyverse)
 library(sf)
@@ -137,7 +156,7 @@ tm_shape(tn)+
 
 ## 2020 map
 
-```{r, echo=FALSE, fig.width=12, fig.height=8}
+```{r, echo=FALSE, fig.width=24, fig.height=16}
 #| include: FALSE
 library(tidyverse)
 library(sf)
