@@ -18,10 +18,99 @@ editor_options:
 
 -   Look specifically in Tennessee at these rates compared to the US.
 
-## Line Graph
+
+## Summary Statistics of Unemplpoyment Durring Covid 19
+```{r}
+library(tidyverse)
+library(gt)
+
+unrate_data<- read_csv("UNRATE.csv")
+unrate_data <- unrate_data |> 
+  mutate(observation_date = as.Date(observation_date))
+```
 
 ```{r}
-# Load necessary libraries
+unrate_data <- unrate_data |> 
+  mutate(
+    period = case_when(
+      observation_date < as.Date("2018-03-01") ~ "before",
+      observation_date < as.Date("2020-10-01") ~ "early",
+      observation_date < as.Date("2022-03-01") ~ "late",
+      TRUE ~ "after"
+    )
+  )
+
+summary_stats <- unrate_data |> 
+  group_by(period) |> 
+  summarize(
+    minimum = min(UNRATE, na.rm = TRUE),
+    Q1 = quantile(UNRATE, probs = 0.25, na.rm = TRUE),
+    median = median(UNRATE, na.rm = TRUE),
+    Q3 = quantile(UNRATE, probs = 0.75, na.rm = TRUE),
+    maximum = max(UNRATE, na.rm = TRUE)
+  )
+
+summary_table <- summary_stats |> 
+  gt() |> 
+  tab_header(
+    title = "Summary Statistics of Unemployment Rates",
+    subtitle = "Grouped by Period"
+  ) |> 
+  fmt_number(
+    columns = c(minimum, Q1, median, Q3, maximum),
+    decimals = 2
+  ) |> 
+  tab_options(
+    table.width = pct(100),
+    table.font.size = 25 
+  )
+
+summary_table
+```
+
+## States With the Most Job Losses From COVID-19
+```{r}
+library(tidyverse)
+library(gt)
+
+covid_data<- read_csv("State_COVID19_Impact.csv")
+covid_data <- covid_data |>
+  rename(jobs_lost = 'Unemployed_2020')|>
+  mutate(jobs_lost_abs = abs(jobs_lost))
+
+```
+
+```{r}
+top_states <- covid_data|>
+  arrange(desc(jobs_lost_abs))|>
+  slice_head( n=10)
+
+top_states_table <- top_states|>
+  select(State, jobs_lost_abs)|>
+  rename(jobs_lost = jobs_lost_abs)|>
+  gt()|>
+  tab_header(
+    title = "States With The Highest Job Losses Durring COVID-19"
+  )|>
+  fmt_number(
+    columns = jobs_lost, 
+    decimals = 0
+  )|>
+  cols_label(
+    State = "State", 
+    jobs_lost = "Jobs Lost"
+  )|>
+  tab_options(
+    table.width = pct(100), 
+    table.font.size = 18
+  )
+
+top_states_table
+```
+
+## Unemployment Rate from 2018-2024
+
+```{r}
 library(tidyverse)
 library(janitor)
 library(RColorBrewer)
@@ -37,14 +126,12 @@ UNRATE<- read_csv("UNRATE.csv")
 ```
 
 ```{r}
-# Process the date column correctly
 UNRATE <- UNRATE %>%
   mutate(Date = as.Date(observation_date)) %>%
   arrange(Date)
 ```
 
 ```{r}
-# Create a continuous line chart of unemployment rate over time
 ggplot(UNRATE, aes(x = Date, y = UNRATE)) + 
   geom_line(linewidth = 1, color = "#2C7FB8") +
   theme_minimal() +
@@ -58,37 +145,17 @@ ggplot(UNRATE, aes(x = Date, y = UNRATE)) +
   )
 ```
 
-## Bar Chart
+## Job Loss by Age, Early, Middle, and Late COVID 19
 
 ```{r}
 cdc_data <- read_csv("https://data.cdc.gov/api/views/qgkx-mswu/rows.csv?accessType=DOWNLOAD")
 
-ggplot( cdc_data |> filter( Group == "Age group" ) ) + geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + labs( title = "loss of work due to illness by age group")
+ggplot( cdc_data |> filter( Group == "Age group" ) )+ 
+  geom_col(aes(x=Subgroup, y=`Sample Size`, fill=factor(Round)), position = "dodge") + 
+  labs( title = "Loss of Work Due to COVID by Age Group Throughout COVID")
 ```
 
-##Summary Statistics
-```{r}
-library(tinytable)
-
-Unemployment_by_month <- read_csv("UNRATE.csv")
-before_after <- Unemployment_by_month |>
-mutate( period = case_when( observation_date < as_date("2020-03-01") ~ "before",
-  observation_date < as_date("2021-03-01") ~ "early",
-  observation_date < as_date("2022-03-01") ~ "late",
-  .default = "after" )) |>
-  mutate( period = factor( period, levels = c("before","early","late","after") ) )
-
-before_after |> 
-  group_by( period ) |>
-  summarize( minimum = quantile( UNRATE, probs = 0 ),
-  Q1= quantile(UNRATE, probs = 0.25),
-  median = quantile( UNRATE, probs = 0.5 ),
-  Q3 = quantile (UNRATE, probs = 0.75), 
-  maximum = quantile( UNRATE, probs = 1 )) |>
-tt()
-```
-
-## Map
+## Unemployment Accross The US Durring COVID 19
 
 ```{r}
 #| include: FALSE
@@ -116,12 +183,11 @@ us <- us |>
 ```
 
 ```{r}
-
 tm_shape(us) +
   tm_polygons(id = "NAME_1", fill = "Unemployed_2020", style="jenks")
 ```
 
-## 2015 map
+## Unemployment Rate in 2015
 
 ```{r}
 #| include: FALSE
@@ -133,7 +199,7 @@ unemployment <- read_csv("2015 unemployment - Sheet1.csv", show_col_types = FALS
   mutate( Unemployment_Rate = abs(Unemployment_Rate))
 
 tmap_options(basemap.server = "OpenStreetMap")
-tmap_mode("view")
+tmap_mode("plot")
 ```
 
 ```{r}
@@ -145,18 +211,21 @@ tn <- tn |>
 tn <- tn |> 
   left_join(unemployment, by = c("NAME_2" = "County"))
 
-tm_shape(tn)+
-  tm_polygons(id = "NAME_2", fill = "Unemployment_Rate", style= "jenks")
+map<-tm_shape(tn)+
+    tm_polygons(
+    id = "NAME_2", 
+    fill = "Unemployment_Rate", 
+    style = "jenks",
+    palette = "Reds",               
+    title = "Unemployment Rate in 2015(%)"  
+  )
+
+print(map)
 ```
+
+## Unemployment Rate in 2020
 
 ```{r}
-#tm_shape(tn) +
-  #tm_polygons(id = "NAME_2", fill = "Unemployment_Rate", style= "jenks")
-```
-
-## 2020 map
-
-```{r, echo=FALSE, fig.width=24, fig.height=16}
 #| include: FALSE
 library(tidyverse)
 library(sf)
@@ -167,7 +236,7 @@ Unemployment_2020 <- read_csv("2020 unemplyment data - Sheet1.csv", show_col_typ
   mutate( Unemployment_Rate = abs(Unemployment_Rate))
 
 tmap_options(basemap.server = "OpenStreetMap")
-tmap_mode("view")
+tmap_mode("plot")
 ```
 
 ```{r}
@@ -179,13 +248,16 @@ tn2 <- tn |>
  tn2 <- tn2 |> 
   left_join(Unemployment_2020, by = c("NAME_2" = "county"))
  
- tm_shape(tn2)+
-   tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
-```
+ map2<-tm_shape(tn2)+
+  tm_polygons(
+    id = "NAME_2", 
+    fill = "Unemployment_Rate.y", 
+    style = "jenks",
+    palette = "Reds",               
+    title = "Unemployment Rate in 2020(%)"  
+  )
 
-```{r}
-#tm_shape(tn2) +
-  #tm_polygons(id = "NAME_2", fill = "Unemployment_Rate.y", style= "jenks")
+print(map2)
 ```
 
 
